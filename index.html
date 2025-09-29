@@ -13,7 +13,7 @@
       <h1 id="h1" class="sr-only">Lo siento mucho</h1>
       <div id="heroLine" class="typewriter" aria-live="polite"></div>
       <p id="heroSub" class="hero-sub"></p>
-      <span class="heart" aria-hidden="true"></span>
+      <span class="heart"></span>
     </section>
 
     <section class="cards" id="cards" aria-label="Razones y compromisos"></section>
@@ -95,20 +95,36 @@
         heartElement.setAttribute('tabindex', '0');
         heartElement.setAttribute('aria-label', 'Toca para ver una sorpresa');
         
-        // Evento de click
-        heartElement.addEventListener('click', () => {
-          VideoManager.showVideo();
+        // Evento de click (funciona para desktop y tap corto en móviles)
+        heartElement.addEventListener('click', (e) => {
+          // CRÍTICO: Limpiar tooltip antes de cualquier acción
+          TooltipManager.hideTooltip();
+          
+          // En móviles, solo ejecutar si no fue un long press
+          if (TooltipManager.isTouchDevice) {
+            // Verificar si el tooltip estaba activo (indica long press)
+            if (TooltipManager.activeTooltip) {
+              e.preventDefault();
+              return;
+            }
+          }
+          
+          // Pequeño delay para asegurar que el tooltip se haya limpiado
+          setTimeout(() => {
+            VideoManager.showVideo();
+          }, 50);
         });
         
         // Evento de teclado
         heartElement.addEventListener('keydown', (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
+            TooltipManager.hideTooltip();
             VideoManager.showVideo();
           }
         });
         
-        // Tooltip
+        // Tooltip con lógica inteligente
         TooltipManager.bindTooltipEvents(heartElement, 'Toca para ver una sorpresa ❤️');
       }
     }
@@ -310,69 +326,184 @@
     }
 
     // ========================
-    // GESTOR DE TOOLTIP (SRP)
+    // GESTOR DE TOOLTIP INTELIGENTE Y RESPONSIVO (SRP)
     // ========================
     class TooltipManager {
+      static isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      static isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      static activeTooltip = null;
+      static tooltipTimeout = null;
+
       static createTooltip(text, targetElement) {
         const tooltip = DOM.createElement('div', 'tooltip');
         tooltip.textContent = text;
         tooltip.setAttribute('role', 'tooltip');
         tooltip.setAttribute('aria-hidden', 'true');
         
-        // Posicionar tooltip
-        const rect = targetElement.getBoundingClientRect();
-        tooltip.style.position = 'absolute';
-        tooltip.style.top = `${rect.top - 40}px`;
-        tooltip.style.left = `${rect.left + (rect.width / 2)}px`;
-        tooltip.style.transform = 'translateX(-50%)';
+        // Posicionamiento inteligente y responsivo
+        this.positionTooltip(tooltip, targetElement);
         
         return tooltip;
       }
 
+      static positionTooltip(tooltip, targetElement) {
+        const rect = targetElement.getBoundingClientRect();
+        const tooltipRect = { width: 200, height: 40 }; // Estimación inicial
+        const viewport = {
+          width: window.innerWidth,
+          height: window.innerHeight,
+          scrollX: window.pageXOffset,
+          scrollY: window.pageYOffset
+        };
+
+        // Calcular posición ideal
+        let top = rect.top - tooltipRect.height - 10;
+        let left = rect.left + (rect.width / 2);
+
+        // Ajustar si se sale del viewport horizontalmente
+        if (left - tooltipRect.width / 2 < 10) {
+          left = 10 + tooltipRect.width / 2;
+        } else if (left + tooltipRect.width / 2 > viewport.width - 10) {
+          left = viewport.width - 10 - tooltipRect.width / 2;
+        }
+
+        // Ajustar si se sale del viewport verticalmente
+        if (top < 10) {
+          top = rect.bottom + 10; // Mostrar abajo
+          tooltip.classList.add('tooltip-below');
+        }
+
+        // Aplicar posición
+        tooltip.style.position = 'fixed';
+        tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.transform = 'translateX(-50%)';
+      }
+
       static showTooltip(text, targetElement) {
+        // CRÍTICO: No mostrar tooltip si hay modales activos
+        if (this.hasActiveModals()) {
+          return null;
+        }
+        
         this.hideTooltip(); // Limpiar tooltip existente
         
         const tooltip = this.createTooltip(text, targetElement);
         document.body.appendChild(tooltip);
+        this.activeTooltip = tooltip;
         
-        // Mostrar con delay para evitar spam
+        // Mostrar con delay adaptativo
+        const delay = this.isMobile ? 200 : 100;
         setTimeout(() => {
-          if (tooltip.parentNode) {
+          if (tooltip.parentNode && !this.hasActiveModals()) {
             tooltip.classList.add('active');
             tooltip.setAttribute('aria-hidden', 'false');
           }
-        }, 100);
+        }, delay);
         
         return tooltip;
       }
 
       static hideTooltip() {
-        const existingTooltip = DOM.qs('.tooltip');
-        if (existingTooltip) {
-          existingTooltip.remove();
+        if (this.activeTooltip) {
+          this.activeTooltip.remove();
+          this.activeTooltip = null;
+        }
+        if (this.tooltipTimeout) {
+          clearTimeout(this.tooltipTimeout);
+          this.tooltipTimeout = null;
         }
       }
 
+      static hasActiveModals() {
+        // Verificar si hay modales activos
+        const videoModal = DOM.qs('.video-modal-overlay.active');
+        const regularModal = DOM.qs('.modal-overlay.active');
+        return !!(videoModal || regularModal);
+      }
+
       static bindTooltipEvents(element, text) {
-        let tooltipTimeout;
+        let showTimeout;
+        let hideTimeout;
+        let touchStartTime;
+        let isLongPress = false;
         
-        element.addEventListener('mouseenter', () => {
-          tooltipTimeout = setTimeout(() => {
-            this.showTooltip(text, element);
-          }, 500); // Delay de 500ms
-        });
+        // Eventos para desktop (mouse)
+        if (!this.isTouchDevice) {
+          element.addEventListener('mouseenter', () => {
+            showTimeout = setTimeout(() => {
+              this.showTooltip(text, element);
+            }, 300); // Delay reducido para mejor UX
+          });
+          
+          element.addEventListener('mouseleave', () => {
+            clearTimeout(showTimeout);
+            this.hideTooltip();
+          });
+        }
         
-        element.addEventListener('mouseleave', () => {
-          clearTimeout(tooltipTimeout);
-          this.hideTooltip();
-        });
+        // Eventos para móviles (touch) - Lógica inteligente
+        if (this.isTouchDevice) {
+          element.addEventListener('touchstart', (e) => {
+            touchStartTime = Date.now();
+            isLongPress = false;
+            
+            // Iniciar timer para long press (tooltip)
+            showTimeout = setTimeout(() => {
+              isLongPress = true;
+              element.classList.add('long-press'); // Feedback visual
+              this.showTooltip(text, element);
+              
+              // Ocultar tooltip después de 3 segundos
+              hideTimeout = setTimeout(() => {
+                this.hideTooltip();
+                element.classList.remove('long-press');
+              }, 3000);
+            }, 500); // 500ms para considerar long press
+          });
+          
+          element.addEventListener('touchend', (e) => {
+            const touchDuration = Date.now() - touchStartTime;
+            
+            // Si fue un tap corto (menos de 500ms), no mostrar tooltip
+            if (touchDuration < 500 && !isLongPress) {
+              clearTimeout(showTimeout);
+              // No hacer preventDefault para permitir el click normal
+              return;
+            }
+            
+            // Si fue long press, prevenir el click
+            if (isLongPress) {
+              e.preventDefault();
+            }
+          });
+          
+          element.addEventListener('touchcancel', () => {
+            clearTimeout(showTimeout);
+            clearTimeout(hideTimeout);
+            isLongPress = false;
+            element.classList.remove('long-press');
+          });
+        }
         
+        // Eventos de teclado para accesibilidad
         element.addEventListener('focus', () => {
           this.showTooltip(text, element);
         });
         
         element.addEventListener('blur', () => {
           this.hideTooltip();
+        });
+        
+        // Ocultar tooltip al hacer scroll o redimensionar
+        window.addEventListener('scroll', () => this.hideTooltip(), { passive: true });
+        window.addEventListener('resize', () => this.hideTooltip(), { passive: true });
+        
+        // Ocultar tooltip cuando se abren modales (medida adicional de seguridad)
+        document.addEventListener('click', (e) => {
+          if (e.target.closest('.modal-overlay, .video-modal-overlay')) {
+            this.hideTooltip();
+          }
         });
       }
     }
@@ -418,6 +549,9 @@
       }
 
       static showVideo() {
+        // CRÍTICO: Limpiar tooltip antes de mostrar modal
+        TooltipManager.hideTooltip();
+        
         let modal = DOM.qs('.video-modal-overlay');
         if (!modal) {
           modal = this.createVideoModal();

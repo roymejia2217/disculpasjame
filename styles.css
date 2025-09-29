@@ -72,6 +72,13 @@
   .heart:active {
     transform: scale(1.1);
   }
+  
+  /* Feedback visual para long press en móviles */
+  .heart.long-press {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 25px rgba(255,107,107,.8));
+    animation-play-state: paused;
+  }
   .heart:focus {
     outline: 2px solid var(--accent);
     outline-offset: 4px;
@@ -230,25 +237,52 @@
     overflow: hidden;
   }
   
-  /* Tooltip */
+  /* Tooltip - Versión Responsiva y Inteligente */
   .tooltip {
-    position: absolute; z-index: 1002;
+    position: fixed; z-index: 1002;
     background: var(--card); color: var(--fg);
     padding: 8px 12px; border-radius: 6px;
     font-size: 13px; font-weight: 500;
     box-shadow: 0 4px 12px rgba(0,0,0,.3);
-    opacity: 0; transform: translateY(5px);
+    opacity: 0; transform: translateY(5px) scale(0.95);
     transition: all 0.2s ease; pointer-events: none;
     white-space: nowrap; max-width: 200px;
     border: 1px solid rgba(255,107,107,.2);
+    backdrop-filter: blur(4px);
   }
   .tooltip.active {
-    opacity: 1; transform: translateY(0);
+    opacity: 1; transform: translateY(0) scale(1);
   }
   .tooltip::before {
     content: ''; position: absolute; top: 100%; left: 50%;
     transform: translateX(-50%); border: 5px solid transparent;
     border-top-color: var(--card);
+  }
+  
+  /* Tooltip cuando aparece debajo del elemento */
+  .tooltip.tooltip-below::before {
+    top: -10px; border-top-color: transparent;
+    border-bottom-color: var(--card);
+  }
+  
+  /* Tooltip responsivo para móviles */
+  @media (max-width: 768px) {
+    .tooltip {
+      font-size: 14px; padding: 10px 14px;
+      max-width: 250px; white-space: normal;
+      text-align: center; line-height: 1.4;
+    }
+    .tooltip::before {
+      border-width: 6px;
+    }
+  }
+  
+  /* Tooltip para pantallas muy pequeñas */
+  @media (max-width: 480px) {
+    .tooltip {
+      max-width: 90vw; font-size: 15px;
+      padding: 12px 16px; border-radius: 8px;
+    }
   }
   
   /* Compromisos */
