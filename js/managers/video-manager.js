@@ -1,5 +1,6 @@
 import { DOM } from '../utils/dom-utils.js';
 import { TooltipManager } from './tooltip-manager.js';
+import { I18nManager } from '../i18n/i18n-manager.js';
 
 /**
  * Gestor de Video (SRP - Single Responsibility Principle)
@@ -23,18 +24,18 @@ export class VideoManager {
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-hidden', 'true');
-    modal.setAttribute('aria-label', 'Reproductor de video sorpresa');
+    modal.setAttribute('aria-label', I18nManager.t('video.ariaLabel'));
     
     modal.innerHTML = `
       <div class="video-modal-content">
         <div class="video-modal-header">
-          <h2 class="video-modal-title">Una sorpresa para ti ❤️</h2>
-          <button class="video-modal-close" aria-label="Cerrar video">&times;</button>
+          <h2 class="video-modal-title">${I18nManager.t('video.title')}</h2>
+          <button class="video-modal-close" aria-label="${I18nManager.t('video.closeAriaLabel')}">&times;</button>
         </div>
         <div class="video-modal-body">
-          <video class="video-player" controls preload="metadata" aria-label="Video sorpresa">
+          <video class="video-player" controls preload="metadata" aria-label="${I18nManager.t('video.playerAriaLabel')}">
             <source src="${this.VIDEO_PATH}" type="video/mp4">
-            Tu navegador no soporta la reproducción de video.
+            ${I18nManager.t('video.notSupported')}
           </video>
         </div>
         <div class="video-modal-footer">

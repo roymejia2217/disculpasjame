@@ -1,4 +1,5 @@
 import { DOM } from '../utils/dom-utils.js';
+import { I18nManager } from '../i18n/i18n-manager.js';
 
 /**
  * Gestor de Modales (SRP - Single Responsibility Principle)
@@ -19,13 +20,13 @@ export class ModalManager {
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title"></h2>
-          <button class="modal-close" aria-label="Cerrar">&times;</button>
+          <button class="modal-close" aria-label="${I18nManager.t('modal.closeAriaLabel')}">&times;</button>
         </div>
         <div class="modal-body">
           <p class="modal-message"></p>
         </div>
         <div class="modal-footer">
-          <button class="modal-btn modal-btn-primary">Entendido</button>
+          <button class="modal-btn modal-btn-primary">${I18nManager.t('modal.closeButton')}</button>
         </div>
       </div>
     `;

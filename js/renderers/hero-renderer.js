@@ -16,25 +16,26 @@ export class HeroRenderer {
     const heroSub = DOM.qs('#heroSub');
     const heart = DOM.qs('.heart');
     
-    heroLine.textContent = config.heroLine;
-    heroLine.style.setProperty('--steps', String(config.heroLine.length || 30));
+    heroLine.textContent = config.line;
+    heroLine.style.setProperty('--steps', String(config.line.length || 30));
     heroLine.style.setProperty('--typing-duration', `${config.typingDurationMs || 3000}ms`);
-    heroSub.textContent = config.heroSub;
+    heroSub.textContent = config.subtitle;
     
     // Configurar corazón interactivo
-    this.setupHeartInteraction(heart);
+    this.setupHeartInteraction(heart, config);
   }
 
   /**
    * Configura la interacción del corazón
    * @param {Element} heartElement - Elemento del corazón
+   * @param {Object} config - Configuración del hero
    */
-  static setupHeartInteraction(heartElement) {
+  static setupHeartInteraction(heartElement, config) {
     // Hacer el corazón clickeable
     heartElement.style.cursor = 'pointer';
     heartElement.setAttribute('role', 'button');
     heartElement.setAttribute('tabindex', '0');
-    heartElement.setAttribute('aria-label', 'Toca para ver una sorpresa');
+    heartElement.setAttribute('aria-label', config.heartAriaLabel);
     
     // Evento de click (funciona para desktop y tap corto en móviles)
     heartElement.addEventListener('click', (e) => {
@@ -66,6 +67,6 @@ export class HeroRenderer {
     });
     
     // Tooltip con lógica inteligente
-    TooltipManager.bindTooltipEvents(heartElement, 'Toca para ver una sorpresa ❤️');
+    TooltipManager.bindTooltipEvents(heartElement, config.heartTooltip);
   }
 }

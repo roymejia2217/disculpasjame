@@ -1,23 +1,76 @@
+import { I18nManager } from '../i18n/i18n-manager.js';
+
 /**
- * Configuración central de la aplicación
- * Modifica SOLO este objeto para cambiar todo el texto de la aplicación
+ * Configuración central de la aplicación con soporte multilenguaje
+ * Ahora usa el sistema de internacionalización para obtener los textos
  */
-export const CONFIG = {
-  heroLine: "¿Podrías darme otra oportunidad?",
-  heroSub: "Desde lo más sincero de mi corazón, quiero reparar cada error que he cometido por completo, y darte alegría, paz y seguridad como siempre debió, y debe ser.",
-  cards: [
-    { front: "Transparencia total", back: "Verdad completa y a tiempo, nada quedará oculto o silenciado, todo estará siempre claro para evitar conflictos." },
-    { front: "Escuchar y calma", back: "Pausar, pensar, no habrá lugar para rabia, enojos o conclusiones apuradas." },
-    { front: "Fe y familia", back: "Recordar y honrar lo aprendido: corregir a tiempo y caminar en lo correcto, juntos." }
-  ],
-  commitments: [
-    "Cumplir cada condición que establezcas, sin excusas ni atajos.",
-    "Ser transparente en todo momento, sin excepciones.",
-    "Escuchar de verdad, bajar la intensidad y hablar con calma.",
-    "Buscar tu ayuda y tu opinión para no repetir errores.",
-    "Usar cada día y la fuerza que Dios me da para demostrarte cambios realistas y sinceros."
-  ],
-  ctaText: "Espero que puedas comprender mis aspiraciones contigo :'(",
-  ctaAlert: "Gracias por tomarte el tiempo de revisarlo. ¿Podrias considerar mi propuesta? :'(",
-  typingDurationMs: 3400
-};
+export class AppConfig {
+  /**
+   * Obtiene la configuración actual basada en el idioma seleccionado
+   * @returns {Object} Configuración de la aplicación
+   */
+  static getConfig() {
+    return {
+      // Metadatos
+      meta: {
+        title: I18nManager.t('meta.title'),
+        description: I18nManager.t('meta.description'),
+        lang: I18nManager.getCurrentLanguage()
+      },
+
+      // Hero
+      hero: {
+        title: I18nManager.t('hero.title'),
+        line: I18nManager.t('hero.line'),
+        subtitle: I18nManager.t('hero.subtitle'),
+        heartTooltip: I18nManager.t('hero.heartTooltip'),
+        heartAriaLabel: I18nManager.t('hero.heartAriaLabel')
+      },
+
+      // Tarjetas
+      cards: I18nManager.t('cards.items'),
+
+      // Compromisos
+      commitments: {
+        title: I18nManager.t('commitments.title'),
+        items: I18nManager.t('commitments.items'),
+        ctaText: I18nManager.t('commitments.ctaText'),
+        ctaAlert: I18nManager.t('commitments.ctaAlert'),
+        progressAriaLabel: I18nManager.t('commitments.progressAriaLabel')
+      },
+
+      // UI
+      ui: {
+        modal: {
+          closeAriaLabel: I18nManager.t('modal.closeAriaLabel'),
+          closeButton: I18nManager.t('modal.closeButton')
+        },
+        video: {
+          ariaLabel: I18nManager.t('video.ariaLabel'),
+          title: I18nManager.t('video.title'),
+          closeAriaLabel: I18nManager.t('video.closeAriaLabel'),
+          playerAriaLabel: I18nManager.t('video.playerAriaLabel'),
+          notSupported: I18nManager.t('video.notSupported')
+        },
+        whatsapp: {
+          defaultMessage: I18nManager.t('whatsapp.defaultMessage')
+        }
+      },
+
+      // Configuración técnica
+      config: {
+        typingDurationMs: I18nManager.t('config.typingDurationMs')
+      }
+    };
+  }
+
+  /**
+   * Obtiene un texto específico por clave
+   * @param {string} key - Clave del texto
+   * @param {Object} params - Parámetros para interpolación
+   * @returns {string} Texto traducido
+   */
+  static t(key, params = {}) {
+    return I18nManager.t(key, params);
+  }
+}

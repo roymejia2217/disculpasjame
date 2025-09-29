@@ -1,5 +1,6 @@
 import { DOM } from '../utils/dom-utils.js';
 import { WhatsAppManager } from '../managers/whatsapp-manager.js';
+import { EventManager } from '../utils/event-manager.js';
 
 /**
  * Renderizador de Compromisos (SRP - Single Responsibility Principle)
@@ -26,31 +27,54 @@ export class CommitmentsRenderer {
 
   /**
    * Renderiza la sección de compromisos
-   * @param {Array} commitments - Array de textos de compromisos
-   * @param {string} ctaText - Texto del botón CTA
-   * @param {string} ctaAlert - Mensaje de alerta del CTA
+   * @param {Object} config - Configuración de compromisos
    */
-  static render(commitments, ctaText, ctaAlert) {
+  static render(config) {
     const list = DOM.qs('#ckList');
     const progress = DOM.qs('#prog');
     const progressText = DOM.qs('#progText');
     const ctaButton = DOM.qs('#cta');
+    const title = DOM.qs('#commitTitle');
+    
+    // Actualizar título
+    title.textContent = config.title;
     
     // Limpiar y renderizar lista
     list.innerHTML = '';
-    commitments.forEach((text, i) => {
+    config.items.forEach((text, i) => {
       list.appendChild(this.createCommitmentItem(text, i));
     });
     
     // Configurar progreso
-    progress.max = commitments.length;
-    progressText.textContent = `0/${commitments.length}`;
+    progress.max = config.items.length;
+    progress.setAttribute('aria-label', config.progressAriaLabel);
+    progressText.textContent = `0/${config.items.length}`;
     
-    // Configurar CTA
-    ctaButton.textContent = ctaText;
-    ctaButton.addEventListener('click', () => {
-      alert(ctaAlert);
-      WhatsAppManager.redirectToWhatsApp();
-    });
+    // Configurar CTA - Limpiar listeners anteriores y agregar nuevo
+    this.setupCTAButton(ctaButton, config);
+  }
+
+  /**
+   * Configura el botón CTA con manejo de eventos limpio (SRP)
+   * @param {Element} button - Elemento del botón
+   * @param {Object} config - Configuración de compromisos
+   */
+  static setupCTAButton(button, config) {
+    // Reemplazar elemento y limpiar listeners anteriores
+    const newButton = EventManager.replaceElement(button);
+    
+    // Configurar contenido
+    newButton.textContent = config.ctaText;
+    
+    // Agregar nuevo event listener con clave única
+    EventManager.addCleanEventListener(
+      newButton, 
+      'click', 
+      () => {
+        alert(config.ctaAlert);
+        WhatsAppManager.redirectToWhatsApp();
+      },
+      'cta-button-click'
+    );
   }
 }

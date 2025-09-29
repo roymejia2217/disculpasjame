@@ -1,5 +1,6 @@
 import { DOM } from '../utils/dom-utils.js';
 import { ModalManager } from '../managers/modal-manager.js';
+import { I18nManager } from '../i18n/i18n-manager.js';
 
 /**
  * Renderizador de Cards (SRP - Single Responsibility Principle)
@@ -15,13 +16,13 @@ export class CardRenderer {
   static createCard({ front, back }, index) {
     const card = DOM.createElement('div', 'card');
     card.tabIndex = 0;
-    card.setAttribute('aria-label', `${front}. Click para ver más información`);
+    card.setAttribute('aria-label', I18nManager.t('cards.cardAriaLabel', { title: front }));
     card.setAttribute('role', 'button');
     
     card.innerHTML = `
       <div class="card-content">
         <h3>${front}</h3>
-        <div class="card-hint">Toca para ver más</div>
+        <div class="card-hint">${I18nManager.t('cards.cardHint')}</div>
       </div>
     `;
     
@@ -47,6 +48,7 @@ export class CardRenderer {
    */
   static render(cards) {
     const container = DOM.qs('#cards');
+    container.setAttribute('aria-label', I18nManager.t('cards.ariaLabel'));
     container.innerHTML = '';
     cards.forEach((card, index) => container.appendChild(this.createCard(card, index)));
   }

@@ -1,4 +1,5 @@
 import { DOM } from '../utils/dom-utils.js';
+import { I18nManager } from '../i18n/i18n-manager.js';
 
 /**
  * Gestor de Estado (SRP - Single Responsibility Principle)
@@ -26,7 +27,10 @@ export class StateManager {
     const completed = checkboxes.filter(cb => cb.checked).length;
     
     DOM.qs('#prog').value = completed;
-    DOM.qs('#progText').textContent = `${completed}/${checkboxes.length}`;
+    DOM.qs('#progText').textContent = I18nManager.t('commitments.progressText', {
+      completed: completed,
+      total: checkboxes.length
+    });
   }
 
   /**
