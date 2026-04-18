@@ -1,7 +1,5 @@
 import { DOM } from '../utils/dom-utils.js';
 import { DeviceUtils } from '../utils/device-utils.js';
-import { TooltipManager } from '../managers/tooltip-manager.js';
-import { VideoManager } from '../managers/video-manager.js';
 import { TIMING } from '../config/constants.js';
 
 /**
