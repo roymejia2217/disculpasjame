@@ -1,29 +1,29 @@
 /**
- * Utilidades DOM (DRY - Don't Repeat Yourself)
- * Funciones reutilizables para manipulación del DOM
+ * DOM utilities. Thin wrappers around querySelector and createElement
+ * to reduce repetitive DOM boilerplate across the codebase.
  */
 export const DOM = {
   /**
-   * Query selector con contexto opcional
-   * @param {string} selector - Selector CSS
-   * @param {Element} context - Contexto de búsqueda (default: document)
+   * Shorthand for querySelector with optional context.
+   * @param {string} selector
+   * @param {Element} [context=document]
    * @returns {Element|null}
    */
   qs: (selector, context = document) => context.querySelector(selector),
   
   /**
-   * Query selector all con contexto opcional
-   * @param {string} selector - Selector CSS
-   * @param {Element} context - Contexto de búsqueda (default: document)
+   * Shorthand for querySelectorAll returning an Array.
+   * @param {string} selector
+   * @param {Element} [context=document]
    * @returns {Array<Element>}
    */
   qsa: (selector, context = document) => Array.from(context.querySelectorAll(selector)),
   
   /**
-   * Crear elemento con clase y contenido opcionales
-   * @param {string} tag - Tag del elemento
-   * @param {string} className - Clase CSS (opcional)
-   * @param {string} content - Contenido de texto (opcional)
+   * Shorthand for createElement with optional CSS class and text content.
+   * @param {string} tag
+   * @param {string} [className='']
+   * @param {string} [content='']
    * @returns {Element}
    */
   createElement: (tag, className = '', content = '') => {

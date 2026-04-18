@@ -1,32 +1,42 @@
+import { DEFAULT_LANGUAGE, STORAGE_KEYS, LANGUAGES } from '../config/constants.js';
+
 /**
- * Gestor de Internacionalización (SRP - Single Responsibility Principle)
- * Responsable únicamente de gestionar las traducciones y el cambio de idioma
+ * Internationalization manager.
+ * Loads translation modules on demand, resolves dot-notation keys,
+ * supports interpolation ({{param}}), caches results, and notifies
+ * listeners when the active language changes. A cross-tab sync
+ * mechanism via the storage event keeps multiple tabs in sync.
  */
 export class I18nManager {
-  static currentLanguage = 'es';
-  static fallbackLanguage = 'es';
+  static currentLanguage = DEFAULT_LANGUAGE;
+  static fallbackLanguage = DEFAULT_LANGUAGE;
   static translations = {};
   static listeners = new Set();
+  static _moduleCache = new Map();
+  static _translationCache = new Map();
 
-  /**
-   * Inicializa el sistema de internacionalización
-   * @param {string} defaultLanguage - Idioma por defecto
-   */
-  static async initialize(defaultLanguage = 'es') {
+  static async initialize(defaultLanguage = DEFAULT_LANGUAGE) {
     this.currentLanguage = defaultLanguage;
     await this.loadTranslations();
     this.setupLanguageChangeListener();
   }
 
-  /**
-   * Carga las traducciones del idioma actual
-   */
+  /** Dynamically import the translation module for the current language.
+   *  Results are cached in _moduleCache so subsequent switches are instant. */
   static async loadTranslations() {
     try {
+      if (this._moduleCache.has(this.currentLanguage)) {
+        this.translations = this._moduleCache.get(this.currentLanguage);
+        this._translationCache.clear();
+        return;
+      }
       const module = await import(`./translations/${this.currentLanguage}.js`);
-      this.translations = module.default || module;
+      const data = module.default || module;
+      this._moduleCache.set(this.currentLanguage, data);
+      this.translations = data;
+      this._translationCache.clear();
     } catch (error) {
-      console.warn(`No se pudo cargar el idioma ${this.currentLanguage}, usando fallback`);
+      console.warn(`Failed to load language ${this.currentLanguage}, falling back`);
       if (this.currentLanguage !== this.fallbackLanguage) {
         this.currentLanguage = this.fallbackLanguage;
         return this.loadTranslations();
@@ -34,131 +44,86 @@ export class I18nManager {
     }
   }
 
-  /**
-   * Obtiene una traducción por clave
-   * @param {string} key - Clave de traducción (ej: 'hero.title')
-   * @param {Object} params - Parámetros para interpolación
-   * @returns {string} Texto traducido
-   */
+  /** Resolve a dot-notation key against the loaded translations,
+   *  interpolate {{param}} placeholders, and cache the result. */
   static t(key, params = {}) {
+    const cacheKey = `${key}:${JSON.stringify(params)}`;
+    if (this._translationCache.has(cacheKey)) {
+      return this._translationCache.get(cacheKey);
+    }
+
     const keys = key.split('.');
     let value = this.translations;
-    
+
     for (const k of keys) {
       value = value?.[k];
       if (value === undefined) {
-        console.warn(`Traducción no encontrada: ${key}`);
-        return key; // Fallback a la clave
+        console.warn(`Translation missing: ${key}`);
+        return key;
       }
     }
-    
-    // Interpolación de parámetros
-    return this.interpolate(value, params);
+
+    const result = typeof value === 'string' ? this.interpolate(value, params) : value;
+    this._translationCache.set(cacheKey, result);
+    return result;
   }
 
-  /**
-   * Interpola parámetros en el texto
-   * @param {string|Array|Object} text - Texto con placeholders
-   * @param {Object} params - Parámetros
-   * @returns {string|Array|Object} Texto interpolado
-   */
   static interpolate(text, params) {
-    // Si no es un string, devolver tal como está
-    if (typeof text !== 'string') {
-      return text;
-    }
-    
+    if (typeof text !== 'string') return text;
     return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
       return params[key] !== undefined ? params[key] : match;
     });
   }
 
-  /**
-   * Cambia el idioma de la aplicación
-   * @param {string} language - Código del idioma
-   */
   static async changeLanguage(language) {
     if (this.currentLanguage === language) return;
-    
+
     this.currentLanguage = language;
     await this.loadTranslations();
     this.notifyListeners();
     this.saveLanguagePreference();
   }
 
-  /**
-   * Obtiene el idioma actual
-   * @returns {string} Código del idioma actual
-   */
   static getCurrentLanguage() {
     return this.currentLanguage;
   }
 
-  /**
-   * Obtiene la lista de idiomas disponibles
-   * @returns {Array} Lista de idiomas
-   */
   static getAvailableLanguages() {
-    return [
-      { code: 'es', name: 'Español', flag: '🇪🇸' },
-      { code: 'en', name: 'English', flag: '🇺🇸' },
-      { code: 'fr', name: 'Français', flag: '🇫🇷' }
-    ];
+    return LANGUAGES;
   }
 
-  /**
-   * Registra un listener para cambios de idioma
-   * @param {Function} callback - Función a ejecutar en cambios
-   */
   static onLanguageChange(callback) {
     this.listeners.add(callback);
   }
 
-  /**
-   * Desregistra un listener
-   * @param {Function} callback - Función a desregistrar
-   */
   static offLanguageChange(callback) {
     this.listeners.delete(callback);
   }
 
-  /**
-   * Notifica a todos los listeners del cambio de idioma
-   */
   static notifyListeners() {
     this.listeners.forEach(callback => {
       try {
         callback(this.currentLanguage);
       } catch (error) {
-        console.error('Error en listener de cambio de idioma:', error);
+        console.error('Language change listener error:', error);
       }
     });
   }
 
-  /**
-   * Configura el listener para cambios de idioma
-   */
+  /** Sync language across tabs via localStorage storage events. */
   static setupLanguageChangeListener() {
-    // Escuchar cambios en localStorage desde otras pestañas
     window.addEventListener('storage', (e) => {
-      if (e.key === 'app_language' && e.newValue !== this.currentLanguage) {
+      if (e.key === STORAGE_KEYS.LANGUAGE && e.newValue !== this.currentLanguage) {
         this.changeLanguage(e.newValue);
       }
     });
   }
 
-  /**
-   * Guarda la preferencia de idioma
-   */
   static saveLanguagePreference() {
-    localStorage.setItem('app_language', this.currentLanguage);
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE, this.currentLanguage);
   }
 
-  /**
-   * Carga la preferencia de idioma guardada
-   * @returns {string} Idioma preferido o null
-   */
   static loadLanguagePreference() {
-    return localStorage.getItem('app_language');
+    return localStorage.getItem(STORAGE_KEYS.LANGUAGE);
   }
 }

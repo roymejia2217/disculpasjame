@@ -3,17 +3,12 @@ import { ModalManager } from '../managers/modal-manager.js';
 import { I18nManager } from '../i18n/i18n-manager.js';
 
 /**
- * Renderizador de Cards (SRP - Single Responsibility Principle)
- * Responsable únicamente de renderizar las tarjetas
+ * Renders the cards grid. Each card opens the detail modal
+ * on click/keypress, forwarding optional imageUrl/imageAlt so
+ * the modal can display a per-card image.
  */
 export class CardRenderer {
-  /**
-   * Crea una tarjeta individual
-   * @param {Object} cardData - Datos de la tarjeta {front, back}
-   * @param {number} index - Índice de la tarjeta
-   * @returns {Element}
-   */
-  static createCard({ front, back }, index) {
+  static createCard({ front, back, imageUrl, imageAlt }, index) {
     const card = DOM.createElement('div', 'card');
     card.tabIndex = 0;
     card.setAttribute('aria-label', I18nManager.t('cards.cardAriaLabel', { title: front }));
@@ -26,12 +21,10 @@ export class CardRenderer {
       </div>
     `;
     
-    // Evento de click/touch
     card.addEventListener('click', () => {
-      ModalManager.show(front, back);
+      ModalManager.show({ title: front, message: back, imageUrl, imageAlt });
     });
     
-    // Evento de teclado para accesibilidad
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -42,10 +35,6 @@ export class CardRenderer {
     return card;
   }
 
-  /**
-   * Renderiza todas las tarjetas
-   * @param {Array} cards - Array de objetos con front y back
-   */
   static render(cards) {
     const container = DOM.qs('#cards');
     container.setAttribute('aria-label', I18nManager.t('cards.ariaLabel'));

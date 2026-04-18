@@ -6,15 +6,16 @@ import { CardRenderer } from '../renderers/card-renderer.js';
 import { CommitmentsRenderer } from '../renderers/commitments-renderer.js';
 import { StateManager } from '../managers/state-manager.js';
 import { LanguageSwitcher } from '../components/language-switcher.js';
+import { DeviceUtils } from '../utils/device-utils.js';
 
 /**
- * Controlador Principal (SRP - Single Responsibility Principle)
- * Responsable únicamente de coordinar la inicialización de la aplicación
+ * Application entry point.
+ * Orchestrates initialization: i18n setup, initial render,
+ * event binding, and language-switcher mounting.
+ * On language change it re-renders the entire UI and restores
+ * persisted checkbox state so the page stays consistent.
  */
 export class AppController {
-  /**
-   * Inicializa la aplicación
-   */
   static async initialize() {
     await this.setupI18n();
     this.setupAccessibility();
@@ -23,52 +24,42 @@ export class AppController {
     this.setupLanguageSwitcher();
   }
 
-  /**
-   * Configura el sistema de internacionalización
-   */
   static async setupI18n() {
     const detectedLanguage = LanguageDetector.detectLanguage();
     await I18nManager.initialize(detectedLanguage);
-    
-    // Escuchar cambios de idioma para re-renderizar
+
     I18nManager.onLanguageChange(() => {
       this.updateDocumentLanguage();
       this.render();
+      StateManager.loadState();
+      StateManager.bindCommitments();
     });
-    
+
     this.updateDocumentLanguage();
   }
 
-  /**
-   * Actualiza el idioma del documento HTML
-   */
+  /** Update <html lang>, <title>, and <meta description> to match current language. */
   static updateDocumentLanguage() {
     const currentLang = I18nManager.getCurrentLanguage();
     document.documentElement.lang = currentLang;
-    
-    // Actualizar meta tags
+
     const config = AppConfig.getConfig();
     document.title = config.meta.title;
-    
+
     const metaDescription = document.querySelector('meta[name="description"]');
     if (metaDescription) {
       metaDescription.content = config.meta.description;
     }
   }
 
-  /**
-   * Configura la accesibilidad
-   */
+  /** Apply prefers-reduced-motion accessibility preference. */
   static setupAccessibility() {
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReducedMotion) {
+    if (DeviceUtils.prefersReducedMotion()) {
       document.documentElement.classList.add('reduced-motion');
     }
   }
 
-  /**
-   * Renderiza todos los componentes
-   */
+  /** Build the full UI from the current config snapshot. */
   static render() {
     const config = AppConfig.getConfig();
     HeroRenderer.render(config.hero);
@@ -76,16 +67,11 @@ export class AppController {
     CommitmentsRenderer.render(config.commitments);
   }
 
-  /**
-   * Configura el selector de idioma
-   */
   static setupLanguageSwitcher() {
     LanguageSwitcher.render();
   }
 
-  /**
-   * Vincula los eventos de la aplicación
-   */
+  /** Restore persisted commitment state and bind change listeners. */
   static bindEvents() {
     StateManager.loadState();
     StateManager.bindCommitments();

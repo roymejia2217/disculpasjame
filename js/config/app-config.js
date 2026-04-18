@@ -1,36 +1,38 @@
 import { I18nManager } from '../i18n/i18n-manager.js';
+import { TIMING, VIDEO, WHATSAPP, CARD_IMAGES } from './constants.js';
 
 /**
- * Configuración central de la aplicación con soporte multilenguaje
- * Ahora usa el sistema de internacionalización para obtener los textos
+ * Aggregate config built from translations and constants.
+ * Merges i18n data with static values (timing, paths, images)
+ * so renderers receive a single, ready-to-use config object.
  */
 export class AppConfig {
-  /**
-   * Obtiene la configuración actual basada en el idioma seleccionado
-   * @returns {Object} Configuración de la aplicación
-   */
   static getConfig() {
     return {
-      // Metadatos
       meta: {
         title: I18nManager.t('meta.title'),
         description: I18nManager.t('meta.description'),
         lang: I18nManager.getCurrentLanguage()
       },
 
-      // Hero
       hero: {
         title: I18nManager.t('hero.title'),
         line: I18nManager.t('hero.line'),
         subtitle: I18nManager.t('hero.subtitle'),
         heartTooltip: I18nManager.t('hero.heartTooltip'),
-        heartAriaLabel: I18nManager.t('hero.heartAriaLabel')
+        heartAriaLabel: I18nManager.t('hero.heartAriaLabel'),
+        typingDurationMs: TIMING.TYPING_DURATION_MS
       },
 
-      // Tarjetas
-      cards: I18nManager.t('cards.items'),
+      cards: I18nManager.t('cards.items').map((item, index) => {
+        const image = CARD_IMAGES[index];
+        return {
+          ...item,
+          imageUrl: image?.src,
+          imageAlt: image?.alt
+        };
+      }),
 
-      // Compromisos
       commitments: {
         title: I18nManager.t('commitments.title'),
         items: I18nManager.t('commitments.items'),
@@ -39,7 +41,6 @@ export class AppConfig {
         progressAriaLabel: I18nManager.t('commitments.progressAriaLabel')
       },
 
-      // UI
       ui: {
         modal: {
           closeAriaLabel: I18nManager.t('modal.closeAriaLabel'),
@@ -50,26 +51,18 @@ export class AppConfig {
           title: I18nManager.t('video.title'),
           closeAriaLabel: I18nManager.t('video.closeAriaLabel'),
           playerAriaLabel: I18nManager.t('video.playerAriaLabel'),
-          notSupported: I18nManager.t('video.notSupported')
+          notSupported: I18nManager.t('video.notSupported'),
+          path: VIDEO.PATH,
+          type: VIDEO.TYPE
         },
         whatsapp: {
-          defaultMessage: I18nManager.t('whatsapp.defaultMessage')
+          defaultMessage: I18nManager.t('whatsapp.defaultMessage'),
+          phoneNumber: WHATSAPP.PHONE_NUMBER
         }
-      },
-
-      // Configuración técnica
-      config: {
-        typingDurationMs: I18nManager.t('config.typingDurationMs')
       }
     };
   }
 
-  /**
-   * Obtiene un texto específico por clave
-   * @param {string} key - Clave del texto
-   * @param {Object} params - Parámetros para interpolación
-   * @returns {string} Texto traducido
-   */
   static t(key, params = {}) {
     return I18nManager.t(key, params);
   }

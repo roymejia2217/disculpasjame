@@ -1,72 +1,62 @@
 import { DOM } from '../utils/dom-utils.js';
+import { DeviceUtils } from '../utils/device-utils.js';
 import { TooltipManager } from '../managers/tooltip-manager.js';
 import { VideoManager } from '../managers/video-manager.js';
+import { TIMING } from '../config/constants.js';
 
 /**
- * Renderizador del Hero (SRP - Single Responsibility Principle)
- * Responsable únicamente de renderizar y configurar la sección hero
+ * Renders and binds interaction on the hero section:
+ * typewriter text, subtitle, and the heart element that
+ * triggers the surprise video on click/keypress.
+ * _heartBound prevents duplicate listener attachment on re-render.
  */
 export class HeroRenderer {
-  /**
-   * Renderiza la sección hero con la configuración proporcionada
-   * @param {Object} config - Configuración del hero
-   */
+  static _heartBound = false;
+
   static render(config) {
     const heroLine = DOM.qs('#heroLine');
     const heroSub = DOM.qs('#heroSub');
     const heart = DOM.qs('.heart');
-    
+
     heroLine.textContent = config.line;
     heroLine.style.setProperty('--steps', String(config.line.length || 30));
-    heroLine.style.setProperty('--typing-duration', `${config.typingDurationMs || 3000}ms`);
+    heroLine.style.setProperty('--typing-duration', `${config.typingDurationMs || TIMING.TYPING_DURATION_MS}ms`);
     heroSub.textContent = config.subtitle;
-    
-    // Configurar corazón interactivo
+
     this.setupHeartInteraction(heart, config);
   }
 
-  /**
-   * Configura la interacción del corazón
-   * @param {Element} heartElement - Elemento del corazón
-   * @param {Object} config - Configuración del hero
-   */
   static setupHeartInteraction(heartElement, config) {
-    // Hacer el corazón clickeable
+    if (this._heartBound) return;
+    this._heartBound = true;
+
     heartElement.style.cursor = 'pointer';
     heartElement.setAttribute('role', 'button');
     heartElement.setAttribute('tabindex', '0');
     heartElement.setAttribute('aria-label', config.heartAriaLabel);
-    
-    // Evento de click (funciona para desktop y tap corto en móviles)
-    heartElement.addEventListener('click', (e) => {
-      // CRÍTICO: Limpiar tooltip antes de cualquier acción
+
+    const handleClick = (e) => {
       TooltipManager.hideTooltip();
-      
-      // En móviles, solo ejecutar si no fue un long press
-      if (TooltipManager.isTouchDevice) {
-        // Verificar si el tooltip estaba activo (indica long press)
-        if (TooltipManager.activeTooltip) {
-          e.preventDefault();
-          return;
-        }
+      if (DeviceUtils.isTouchDevice && TooltipManager.activeTooltip) {
+        e.preventDefault();
+        return;
       }
-      
-      // Pequeño delay para asegurar que el tooltip se haya limpiado
       setTimeout(() => {
         VideoManager.showVideo();
-      }, 50);
-    });
-    
-    // Evento de teclado
-    heartElement.addEventListener('keydown', (e) => {
+      }, TIMING.TOOLTIP.VIDEO_SHOW_DELAY);
+    };
+
+    const handleKeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         TooltipManager.hideTooltip();
         VideoManager.showVideo();
       }
-    });
-    
-    // Tooltip con lógica inteligente
+    };
+
+    heartElement.addEventListener('click', handleClick);
+    heartElement.addEventListener('keydown', handleKeydown);
+
     TooltipManager.bindTooltipEvents(heartElement, config.heartTooltip);
   }
 }

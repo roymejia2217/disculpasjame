@@ -1,31 +1,22 @@
 import { DOM } from '../utils/dom-utils.js';
 import { TooltipManager } from './tooltip-manager.js';
 import { I18nManager } from '../i18n/i18n-manager.js';
+import { ModalUtils } from '../utils/modal-utils.js';
+import { VIDEO, SELECTORS } from '../config/constants.js';
 
 /**
- * Gestor de Video (SRP - Single Responsibility Principle)
- * Responsable únicamente de manejar la reproducción de video
+ * Surprise video modal.
+ * Lazy-created on first open. Pauses and resets playback on close.
+ * Delegates overlay, focus-trap, and escape handling to ModalUtils.
  */
 export class VideoManager {
-  static VIDEO_PATH = 'files/video.mp4';
-  static VIDEO_CONFIG = {
-    width: 720,
-    height: 720,
-    duration: 38.42,
-    aspectRatio: '1:1'
-  };
-
-  /**
-   * Crea el modal de video
-   * @returns {Element}
-   */
   static createVideoModal() {
     const modal = DOM.createElement('div', 'video-modal-overlay');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-hidden', 'true');
     modal.setAttribute('aria-label', I18nManager.t('video.ariaLabel'));
-    
+
     modal.innerHTML = `
       <div class="video-modal-content">
         <div class="video-modal-header">
@@ -34,82 +25,46 @@ export class VideoManager {
         </div>
         <div class="video-modal-body">
           <video class="video-player" controls preload="metadata" aria-label="${I18nManager.t('video.playerAriaLabel')}">
-            <source src="${this.VIDEO_PATH}" type="video/mp4">
+            <source src="${VIDEO.PATH}" type="${VIDEO.TYPE}">
             ${I18nManager.t('video.notSupported')}
           </video>
         </div>
-        <div class="video-modal-footer">
-          <!-- Footer vacío - solo se usa el botón X del header -->
-        </div>
+        <div class="video-modal-footer"></div>
       </div>
     `;
-    
+
     return modal;
   }
 
-  /**
-   * Muestra el video
-   */
   static showVideo() {
-    // CRÍTICO: Limpiar tooltip antes de mostrar modal
     TooltipManager.hideTooltip();
-    
-    let modal = DOM.qs('.video-modal-overlay');
+
+    let modal = DOM.qs(SELECTORS.VIDEO_MODAL_OVERLAY);
     if (!modal) {
       modal = this.createVideoModal();
       document.body.appendChild(modal);
     }
-    
-    // Mostrar modal
-    modal.setAttribute('aria-hidden', 'false');
-    modal.classList.add('active');
-    document.body.classList.add('video-modal-open');
-    
-    // Enfocar el botón de cerrar
-    DOM.qs('.video-modal-close', modal).focus();
-    
-    // Eventos de cierre
-    this.bindVideoCloseEvents(modal);
+
+    modal._previouslyFocused = document.activeElement;
+    ModalUtils.open(modal, SELECTORS.VIDEO_MODAL_OPEN_CLASS);
+    ModalUtils.bindCloseEvents(modal, SELECTORS.VIDEO_MODAL_OPEN_CLASS, () => {
+      const video = DOM.qs('.video-player', modal);
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+      }
+    });
+    ModalUtils.trapFocus(modal);
   }
 
-  /**
-   * Oculta el video
-   * @param {Element} modal - Elemento del modal de video
-   */
   static hideVideo(modal) {
     const video = DOM.qs('.video-player', modal);
     if (video) {
       video.pause();
       video.currentTime = 0;
     }
-    
-    modal.setAttribute('aria-hidden', 'true');
-    modal.classList.remove('active');
-    document.body.classList.remove('video-modal-open');
-  }
-
-  /**
-   * Vincula los eventos de cierre del video
-   * @param {Element} modal - Elemento del modal de video
-   */
-  static bindVideoCloseEvents(modal) {
-    const closeBtn = DOM.qs('.video-modal-close', modal);
-    const overlay = modal;
-    
-    const closeVideo = () => this.hideVideo(modal);
-    
-    closeBtn.addEventListener('click', closeVideo);
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) closeVideo();
-    });
-    
-    // Cerrar con Escape
-    const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        closeVideo();
-        document.removeEventListener('keydown', handleEscape);
-      }
-    };
-    document.addEventListener('keydown', handleEscape);
+    const previouslyFocused = modal._previouslyFocused || null;
+    ModalUtils.close(modal, SELECTORS.VIDEO_MODAL_OPEN_CLASS, previouslyFocused);
+    ModalUtils.removeFocusTrap(modal);
   }
 }

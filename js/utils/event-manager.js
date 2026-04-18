@@ -1,25 +1,18 @@
 /**
- * Gestor de Eventos (SRP - Single Responsibility Principle)
- * Responsable únicamente de manejar la limpieza y gestión de eventos
+ * Event listener registry with automatic cleanup.
+ * Tracks listeners by key so they can be removed without
+ * keeping explicit handler references throughout the codebase.
  */
 export class EventManager {
   static eventListeners = new Map();
 
   /**
-   * Agrega un event listener con limpieza automática
-   * @param {Element} element - Elemento DOM
-   * @param {string} event - Tipo de evento
-   * @param {Function} handler - Función manejadora
-   * @param {string} key - Clave única para identificar el listener
+   * Add an event listener, replacing any previous listener
+   * registered under the same key.
    */
   static addCleanEventListener(element, event, handler, key) {
-    // Remover listener anterior si existe
     this.removeEventListener(element, key);
-    
-    // Agregar nuevo listener
     element.addEventListener(event, handler);
-    
-    // Guardar referencia para limpieza futura
     this.eventListeners.set(key, {
       element,
       event,
@@ -28,9 +21,8 @@ export class EventManager {
   }
 
   /**
-   * Remueve un event listener específico
-   * @param {Element} element - Elemento DOM
-   * @param {string} key - Clave del listener
+   * Remove a listener previously registered under the given key,
+   * but only if the DOM element still matches.
    */
   static removeEventListener(element, key) {
     const listener = this.eventListeners.get(key);
@@ -41,8 +33,7 @@ export class EventManager {
   }
 
   /**
-   * Limpia todos los event listeners de un elemento
-   * @param {Element} element - Elemento DOM
+   * Remove all tracked listeners bound to the given element.
    */
   static clearElementListeners(element) {
     for (const [key, listener] of this.eventListeners.entries()) {
@@ -54,18 +45,13 @@ export class EventManager {
   }
 
   /**
-   * Reemplaza un elemento y limpia sus listeners
-   * @param {Element} oldElement - Elemento a reemplazar
-   * @returns {Element} Nuevo elemento sin listeners
+   * Replace an element with a clone that carries no listeners.
+   * Used when the only way to remove handlers is replacing the node.
    */
   static replaceElement(oldElement) {
-    // Limpiar listeners del elemento anterior
     this.clearElementListeners(oldElement);
-    
-    // Crear nuevo elemento
     const newElement = oldElement.cloneNode(true);
     oldElement.parentNode.replaceChild(newElement, oldElement);
-    
     return newElement;
   }
 }

@@ -1,105 +1,76 @@
 import { DOM } from '../utils/dom-utils.js';
+import { DeviceUtils } from '../utils/device-utils.js';
+import { TooltipManager } from '../managers/tooltip-manager.js';
+import { VideoManager } from '../managers/video-manager.js';
+import { TIMING } from '../config/constants.js';
 
 /**
- * Gestor de Tooltip Inteligente y Responsivo (SRP - Single Responsibility Principle)
- * Responsable únicamente de manejar los tooltips de la aplicación
+ * Manages tooltip positioning, show/hide timing, and input modes.
+ * Handles both mouse hover (desktop) and long-press (touch) patterns.
+ * Global listeners for scroll, resize, and modal clicks auto-hide the
+ * tooltip to prevent it from floating off-target.
  */
 export class TooltipManager {
-  static isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  static isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   static activeTooltip = null;
   static tooltipTimeout = null;
+  static _globalListenersBound = false;
 
-  /**
-   * Crea un tooltip
-   * @param {string} text - Texto del tooltip
-   * @param {Element} targetElement - Elemento objetivo
-   * @returns {Element}
-   */
   static createTooltip(text, targetElement) {
     const tooltip = DOM.createElement('div', 'tooltip');
     tooltip.textContent = text;
     tooltip.setAttribute('role', 'tooltip');
     tooltip.setAttribute('aria-hidden', 'true');
-    
-    // Posicionamiento inteligente y responsivo
     this.positionTooltip(tooltip, targetElement);
-    
     return tooltip;
   }
 
-  /**
-   * Posiciona el tooltip de manera inteligente
-   * @param {Element} tooltip - Elemento del tooltip
-   * @param {Element} targetElement - Elemento objetivo
-   */
+  /** Position above the target by default; flip below when too close to viewport top. */
   static positionTooltip(tooltip, targetElement) {
     const rect = targetElement.getBoundingClientRect();
-    const tooltipRect = { width: 200, height: 40 }; // Estimación inicial
     const viewport = {
       width: window.innerWidth,
-      height: window.innerHeight,
-      scrollX: window.pageXOffset,
-      scrollY: window.pageYOffset
+      height: window.innerHeight
     };
 
-    // Calcular posición ideal
-    let top = rect.top - tooltipRect.height - 10;
+    let top = rect.top - TOOLTIP.ESTIMATED_HEIGHT - 10;
     let left = rect.left + (rect.width / 2);
 
-    // Ajustar si se sale del viewport horizontalmente
-    if (left - tooltipRect.width / 2 < 10) {
-      left = 10 + tooltipRect.width / 2;
-    } else if (left + tooltipRect.width / 2 > viewport.width - 10) {
-      left = viewport.width - 10 - tooltipRect.width / 2;
+    if (left - TOOLTIP.ESTIMATED_WIDTH / 2 < TOOLTIP.VIEWPORT_MARGIN) {
+      left = TOOLTIP.VIEWPORT_MARGIN + TOOLTIP.ESTIMATED_WIDTH / 2;
+    } else if (left + TOOLTIP.ESTIMATED_WIDTH / 2 > viewport.width - TOOLTIP.VIEWPORT_MARGIN) {
+      left = viewport.width - TOOLTIP.VIEWPORT_MARGIN - TOOLTIP.ESTIMATED_WIDTH / 2;
     }
 
-    // Ajustar si se sale del viewport verticalmente
-    if (top < 10) {
-      top = rect.bottom + 10; // Mostrar abajo
+    if (top < TOOLTIP.VIEWPORT_MARGIN) {
+      top = rect.bottom + 10;
       tooltip.classList.add('tooltip-below');
     }
 
-    // Aplicar posición
     tooltip.style.position = 'fixed';
     tooltip.style.top = `${top}px`;
     tooltip.style.left = `${left}px`;
     tooltip.style.transform = 'translateX(-50%)';
   }
 
-  /**
-   * Muestra un tooltip
-   * @param {string} text - Texto del tooltip
-   * @param {Element} targetElement - Elemento objetivo
-   * @returns {Element|null}
-   */
   static showTooltip(text, targetElement) {
-    // CRÍTICO: No mostrar tooltip si hay modales activos
-    if (this.hasActiveModals()) {
-      return null;
-    }
-    
-    this.hideTooltip(); // Limpiar tooltip existente
-    
+    if (this.hasActiveModals()) return null;
+    this.hideTooltip();
+
     const tooltip = this.createTooltip(text, targetElement);
     document.body.appendChild(tooltip);
     this.activeTooltip = tooltip;
-    
-    // Mostrar con delay adaptativo
-    const delay = this.isMobile ? 200 : 100;
-    setTimeout(() => {
+
+    const delay = DeviceUtils.isMobile ? TIMING.TOOLTIP.MOBILE_DELAY : TIMING.TOOLTIP.DESKTOP_DELAY;
+    this.tooltipTimeout = setTimeout(() => {
       if (tooltip.parentNode && !this.hasActiveModals()) {
         tooltip.classList.add('active');
         tooltip.setAttribute('aria-hidden', 'false');
       }
     }, delay);
-    
+
     return tooltip;
   }
 
-  /**
-   * Oculta el tooltip activo
-   */
   static hideTooltip() {
     if (this.activeTooltip) {
       this.activeTooltip.remove();
@@ -111,104 +82,89 @@ export class TooltipManager {
     }
   }
 
-  /**
-   * Verifica si hay modales activos
-   * @returns {boolean}
-   */
   static hasActiveModals() {
-    // Verificar si hay modales activos
-    const videoModal = DOM.qs('.video-modal-overlay.active');
-    const regularModal = DOM.qs('.modal-overlay.active');
-    return !!(videoModal || regularModal);
+    return !!(DOM.qs('.video-modal-overlay.active') || DOM.qs('.modal-overlay.active'));
   }
 
-  /**
-   * Vincula los eventos de tooltip a un elemento
-   * @param {Element} element - Elemento objetivo
-   * @param {string} text - Texto del tooltip
-   */
+  /** Bind hover, touch, and focus tooltip events to an element.
+   *  On desktop: mouseenter/mouseleave with a delay.
+   *  On touch: long-press shows, auto-hides after a duration.
+   *  Focus/blur works on both input modes for keyboard accessibility. */
   static bindTooltipEvents(element, text) {
+    if (element._tooltipBound) return;
+    element._tooltipBound = true;
+
     let showTimeout;
     let hideTimeout;
     let touchStartTime;
     let isLongPress = false;
-    
-    // Eventos para desktop (mouse)
-    if (!this.isTouchDevice) {
-      element.addEventListener('mouseenter', () => {
+
+    if (!DeviceUtils.isTouchDevice) {
+      const handleMouseEnter = () => {
         showTimeout = setTimeout(() => {
           this.showTooltip(text, element);
-        }, 300); // Delay reducido para mejor UX
-      });
-      
-      element.addEventListener('mouseleave', () => {
+        }, TIMING.TOOLTIP.DESKTOP_DELAY);
+      };
+      const handleMouseLeave = () => {
         clearTimeout(showTimeout);
         this.hideTooltip();
-      });
+      };
+      element.addEventListener('mouseenter', handleMouseEnter);
+      element.addEventListener('mouseleave', handleMouseLeave);
     }
-    
-    // Eventos para móviles (touch) - Lógica inteligente
-    if (this.isTouchDevice) {
-      element.addEventListener('touchstart', (e) => {
+
+    if (DeviceUtils.isTouchDevice) {
+      const handleTouchStart = (e) => {
         touchStartTime = Date.now();
         isLongPress = false;
-        
-        // Iniciar timer para long press (tooltip)
         showTimeout = setTimeout(() => {
           isLongPress = true;
-          element.classList.add('long-press'); // Feedback visual
+          element.classList.add('long-press');
           this.showTooltip(text, element);
-          
-          // Ocultar tooltip después de 3 segundos
           hideTimeout = setTimeout(() => {
             this.hideTooltip();
             element.classList.remove('long-press');
-          }, 3000);
-        }, 500); // 500ms para considerar long press
-      });
-      
-      element.addEventListener('touchend', (e) => {
+          }, TIMING.TOOLTIP.AUTO_HIDE_DURATION);
+        }, TIMING.TOOLTIP.LONG_PRESS_THRESHOLD);
+      };
+      const handleTouchEnd = (e) => {
         const touchDuration = Date.now() - touchStartTime;
-        
-        // Si fue un tap corto (menos de 500ms), no mostrar tooltip
-        if (touchDuration < 500 && !isLongPress) {
+        if (touchDuration < TIMING.TOOLTIP.LONG_PRESS_THRESHOLD && !isLongPress) {
           clearTimeout(showTimeout);
-          // No hacer preventDefault para permitir el click normal
           return;
         }
-        
-        // Si fue long press, prevenir el click
         if (isLongPress) {
           e.preventDefault();
         }
-      });
-      
-      element.addEventListener('touchcancel', () => {
+      };
+      const handleTouchCancel = () => {
         clearTimeout(showTimeout);
         clearTimeout(hideTimeout);
         isLongPress = false;
         element.classList.remove('long-press');
-      });
+      };
+      element.addEventListener('touchstart', handleTouchStart);
+      element.addEventListener('touchend', handleTouchEnd);
+      element.addEventListener('touchcancel', handleTouchCancel);
     }
-    
-    // Eventos de teclado para accesibilidad
-    element.addEventListener('focus', () => {
-      this.showTooltip(text, element);
-    });
-    
-    element.addEventListener('blur', () => {
-      this.hideTooltip();
-    });
-    
-    // Ocultar tooltip al hacer scroll o redimensionar
-    window.addEventListener('scroll', () => this.hideTooltip(), { passive: true });
-    window.addEventListener('resize', () => this.hideTooltip(), { passive: true });
-    
-    // Ocultar tooltip cuando se abren modales (medida adicional de seguridad)
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('.modal-overlay, .video-modal-overlay')) {
-        this.hideTooltip();
-      }
-    });
+
+    const handleFocus = () => { this.showTooltip(text, element); };
+    const handleBlur = () => { this.hideTooltip(); };
+    element.addEventListener('focus', handleFocus);
+    element.addEventListener('blur', handleBlur);
+
+    if (!this._globalListenersBound) {
+      this._globalListenersBound = true;
+      const handleScroll = () => this.hideTooltip();
+      const handleResize = () => this.hideTooltip();
+      const handleDocClick = (e) => {
+        if (e.target.closest('.modal-overlay, .video-modal-overlay')) {
+          this.hideTooltip();
+        }
+      };
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      window.addEventListener('resize', handleResize, { passive: true });
+      document.addEventListener('click', handleDocClick);
+    }
   }
 }

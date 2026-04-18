@@ -1,16 +1,10 @@
-/**
- * English Translations
- * Hierarchical structure for logical organization
- */
 export default {
-  // Metadata
   meta: {
     title: "I'm really sorry",
     description: "A new way to apologize to my girlfriend Jessica.",
     lang: "en"
   },
 
-  // Hero Section
   hero: {
     title: "I'm really sorry",
     line: "Could you give me another chance?",
@@ -19,7 +13,6 @@ export default {
     heartAriaLabel: "Tap to see a surprise"
   },
 
-  // Cards
   cards: {
     ariaLabel: "Reasons and commitments",
     cardHint: "Tap to see more",
@@ -40,7 +33,6 @@ export default {
     ]
   },
 
-  // Commitments
   commitments: {
     title: "My commitments",
     progressAriaLabel: "Commitments progress",
@@ -50,19 +42,20 @@ export default {
       "Be transparent at all times, without exceptions.",
       "Listen for real, lower the intensity and speak calmly.",
       "Seek your help and opinion to avoid repeating mistakes.",
-      "Use each day and the strength God gives me to show you realistic and sincere changes."
+      "Use each day and the strength God gives me to show you realistic and sincere changes.",
+      "Organize myself better to dedicate the time that is rightfully yours, taking every possible care to make it happen.",
+      "Always think about what's best for both of us, before acting, before deciding.",
+      "Give you the place you deserve and make sure you're respected, showing how much you mean to me."
     ],
     ctaText: "I hope you can understand my aspirations with you :'(",
     ctaAlert: "Thank you for taking the time to review it. Could you consider my proposal? :'("
   },
 
-  // Modals
   modal: {
     closeAriaLabel: "Close",
     closeButton: "Understood"
   },
 
-  // Video
   video: {
     ariaLabel: "Surprise video player",
     title: "A surprise for you ❤️",
@@ -71,24 +64,11 @@ export default {
     notSupported: "Your browser does not support video playback."
   },
 
-  // WhatsApp
   whatsapp: {
     defaultMessage: "I will never stop loving you ❤"
   },
 
-  // Language selector
   language: {
-    selector: "Language",
-    current: "English",
-    available: [
-      { code: "es", name: "Español", flag: "🇪🇸" },
-      { code: "en", name: "English", flag: "🇺🇸" },
-      { code: "fr", name: "Français", flag: "🇫🇷" }
-    ]
-  },
-
-  // Configuration
-  config: {
-    typingDurationMs: 3400
+    selector: "Language"
   }
 };

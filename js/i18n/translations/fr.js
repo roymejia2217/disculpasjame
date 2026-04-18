@@ -1,16 +1,10 @@
-/**
- * Traductions en Français
- * Structure hiérarchique pour une organisation logique
- */
 export default {
-  // Métadonnées
   meta: {
     title: "Je suis vraiment désolé",
     description: "Une nouvelle façon de demander pardon à ma petite amie Jessica.",
     lang: "fr"
   },
 
-  // Section Hero
   hero: {
     title: "Je suis vraiment désolé",
     line: "Pourrais-tu me donner une autre chance ?",
@@ -19,7 +13,6 @@ export default {
     heartAriaLabel: "Appuie pour voir une surprise"
   },
 
-  // Cartes
   cards: {
     ariaLabel: "Raisons et engagements",
     cardHint: "Appuie pour voir plus",
@@ -40,7 +33,6 @@ export default {
     ]
   },
 
-  // Engagements
   commitments: {
     title: "Mes engagements",
     progressAriaLabel: "Progrès des engagements",
@@ -50,19 +42,20 @@ export default {
       "Être transparent à tout moment, sans exceptions.",
       "Écouter vraiment, baisser l'intensité et parler calmement.",
       "Chercher ton aide et ton opinion pour éviter de répéter les erreurs.",
-      "Utiliser chaque jour et la force que Dieu me donne pour te montrer des changements réalistes et sincères."
+      "Utiliser chaque jour et la force que Dieu me donne pour te montrer des changements réalistes et sincères.",
+      "M'organiser mieux pour te consacrer le temps qui te revient, en prenant tous les soins possibles pour y arriver.",
+      "Penser toujours à ce qui est le mieux pour nous deux, avant d'agir, avant de décider.",
+      "Te donner la place que tu mérites et te faire respecter, en montrant combien tu comptes pour moi."
     ],
     ctaText: "J'espère que tu peux comprendre mes aspirations avec toi :'(",
     ctaAlert: "Merci d'avoir pris le temps de le réviser. Pourrais-tu considérer ma proposition ? :'("
   },
 
-  // Modales
   modal: {
     closeAriaLabel: "Fermer",
     closeButton: "Compris"
   },
 
-  // Vidéo
   video: {
     ariaLabel: "Lecteur vidéo surprise",
     title: "Une surprise pour toi ❤️",
@@ -71,24 +64,11 @@ export default {
     notSupported: "Votre navigateur ne prend pas en charge la lecture vidéo."
   },
 
-  // WhatsApp
   whatsapp: {
     defaultMessage: "Je ne cesserai jamais de t'aimer ❤"
   },
 
-  // Sélecteur de langue
   language: {
-    selector: "Langue",
-    current: "Français",
-    available: [
-      { code: "es", name: "Español", flag: "🇪🇸" },
-      { code: "en", name: "English", flag: "🇺🇸" },
-      { code: "fr", name: "Français", flag: "🇫🇷" }
-    ]
-  },
-
-  // Configuration
-  config: {
-    typingDurationMs: 3400
+    selector: "Langue"
   }
 };

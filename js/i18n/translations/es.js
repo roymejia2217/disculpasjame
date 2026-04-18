@@ -1,16 +1,10 @@
-/**
- * Traducciones en Español (idioma base)
- * Estructura jerárquica para organización lógica
- */
 export default {
-  // Metadatos
   meta: {
     title: "Lo siento mucho",
     description: "Una nueva forma de pedir perdón a mi novia Jessica.",
     lang: "es"
   },
 
-  // Sección Hero
   hero: {
     title: "Lo siento mucho",
     line: "¿Podrías darme otra oportunidad?",
@@ -19,7 +13,6 @@ export default {
     heartAriaLabel: "Toca para ver una sorpresa"
   },
 
-  // Tarjetas
   cards: {
     ariaLabel: "Razones y compromisos",
     cardHint: "Toca para ver más",
@@ -40,7 +33,6 @@ export default {
     ]
   },
 
-  // Compromisos
   commitments: {
     title: "Mis compromisos",
     progressAriaLabel: "Progreso compromisos",
@@ -50,19 +42,20 @@ export default {
       "Ser transparente en todo momento, sin excepciones.",
       "Escuchar de verdad, bajar la intensidad y hablar con calma.",
       "Buscar tu ayuda y tu opinión para no repetir errores.",
-      "Usar cada día y la fuerza que Dios me da para demostrarte cambios realistas y sinceros."
+      "Usar cada día y la fuerza que Dios me da para demostrarte cambios realistas y sinceros.",
+      "Organizarme mejor para dedicarte el tiempo que te corresponde, tomando todos los cuidados posibles para lograrlo.",
+      "Pensar siempre en lo mejor para los dos, antes de actuar, antes de decidir.",
+      "Darle el lugar que te mereces y hacerte respetar, demostrando lo mucho que vales para mí."
     ],
     ctaText: "Espero que puedas comprender mis aspiraciones contigo :'(",
-    ctaAlert: "Gracias por tomarte el tiempo de revisarlo. ¿Podrias considerar mi propuesta? :'("
+    ctaAlert: "Gracias por tomarte el tiempo de revisarlo. ¿Podrías considerar mi propuesta? :'("
   },
 
-  // Modales
   modal: {
     closeAriaLabel: "Cerrar",
     closeButton: "Entendido"
   },
 
-  // Video
   video: {
     ariaLabel: "Reproductor de video sorpresa",
     title: "Una sorpresa para ti ❤️",
@@ -71,24 +64,11 @@ export default {
     notSupported: "Tu navegador no soporta la reproducción de video."
   },
 
-  // WhatsApp
   whatsapp: {
     defaultMessage: "No dejaré de amarte jamás ❤"
   },
 
-  // Selector de idioma
   language: {
-    selector: "Idioma",
-    current: "Español",
-    available: [
-      { code: "es", name: "Español", flag: "🇪🇸" },
-      { code: "en", name: "English", flag: "🇺🇸" },
-      { code: "fr", name: "Français", flag: "🇫🇷" }
-    ]
-  },
-
-  // Configuración
-  config: {
-    typingDurationMs: 3400
+    selector: "Idioma"
   }
 };
