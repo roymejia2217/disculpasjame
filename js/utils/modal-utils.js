@@ -20,7 +20,7 @@ export const ModalUtils = {
   },
 
   bindCloseEvents(modal, bodyClass, onClose = null) {
-    const closeBtn = modal.querySelector('.modal-close, .video-modal-close');
+    const closeBtns = modal.querySelectorAll('.modal-close, .video-modal-close, .modal-btn-primary');
     const handleOverlayClick = (e) => {
       if (e.target === modal) this.doClose(modal, bodyClass, onClose);
     };
@@ -28,7 +28,7 @@ export const ModalUtils = {
       if (e.key === 'Escape') this.doClose(modal, bodyClass, onClose);
     };
 
-    if (closeBtn) closeBtn.addEventListener('click', () => this.doClose(modal, bodyClass, onClose));
+    closeBtns.forEach(btn => btn.addEventListener('click', () => this.doClose(modal, bodyClass, onClose)));
     modal.addEventListener('click', handleOverlayClick);
     document.addEventListener('keydown', handleEscape);
 
@@ -38,6 +38,7 @@ export const ModalUtils = {
   doClose(modal, bodyClass, onClose = null) {
     const previouslyFocused = modal._previouslyFocused || null;
     this.close(modal, bodyClass, previouslyFocused);
+    this.removeFocusTrap(modal);
     if (onClose) onClose();
   },
 
