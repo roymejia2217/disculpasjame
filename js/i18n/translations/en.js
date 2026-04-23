@@ -65,7 +65,13 @@ export default {
   },
 
   whatsapp: {
-    defaultMessage: "I will never stop loving you ❤"
+    progressMessage: "I accept {{completed}}/{{total}} of your commitments",
+    closingMessage: "Let's never stop loving each other",
+    heartSymbol: "<3",
+    fallbackTitle: "Copy message",
+    fallbackBody: "WhatsApp not detected. Copy the message and paste it:",
+    copyButton: "Copy to clipboard",
+    copySuccess: "Message copied"
   },
 
   language: {

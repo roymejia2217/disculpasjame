@@ -65,7 +65,13 @@ export default {
   },
 
   whatsapp: {
-    defaultMessage: "No dejaré de amarte jamás ❤"
+    progressMessage: "Acepto {{completed}}/{{total}} de tus compromisos",
+    closingMessage: "No dejemos de amarnos jamás",
+    heartSymbol: "<3",
+    fallbackTitle: "Copiar mensaje",
+    fallbackBody: "No se detectó WhatsApp. Copia el mensaje y pégalo:",
+    copyButton: "Copiar al portapapeles",
+    copySuccess: "Mensaje copiado"
   },
 
   language: {

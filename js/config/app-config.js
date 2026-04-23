@@ -56,7 +56,6 @@ export class AppConfig {
           type: VIDEO.TYPE
         },
         whatsapp: {
-          defaultMessage: I18nManager.t('whatsapp.defaultMessage'),
           phoneNumber: WHATSAPP.PHONE_NUMBER
         }
       }

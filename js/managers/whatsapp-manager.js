@@ -1,25 +1,48 @@
-import { I18nManager } from '../i18n/i18n-manager.js';
 import { WHATSAPP } from '../config/constants.js';
+import { MessageFormatter } from '../utils/message-formatter.js';
+import { FallbackModal } from '../utils/fallback-modal.js';
 
 /**
- * WhatsApp deep-link generator.
- * Builds a wa.me URL with the default localized message
- * and opens it in a new tab.
+ * WhatsApp deep-link generator and redirect handler.
+ * Builds a dynamic wa.me URL based on commitment progress,
+ * attempts to open it, and falls back to a copyable modal
+ * when WhatsApp is unavailable (desktop without app, popups blocked, etc.).
  */
 export class WhatsAppManager {
-  static getDefaultMessage() {
-    return I18nManager.t('whatsapp.defaultMessage');
-  }
-
-  static generateWhatsAppURL(phoneNumber = WHATSAPP.PHONE_NUMBER, message = null) {
-    const defaultMessage = message || this.getDefaultMessage();
-    const encodedMessage = encodeURIComponent(defaultMessage);
-    const cleanPhoneNumber = phoneNumber.replace(/[^\d+]/g, '');
+  static generateDynamicURL(completed, total) {
+    const message = MessageFormatter.buildWhatsAppMessage(completed, total);
+    const encodedMessage = encodeURIComponent(message);
+    const cleanPhoneNumber = WHATSAPP.PHONE_NUMBER.replace(/[^\d+]/g, '');
     return `https://wa.me/${cleanPhoneNumber}?text=${encodedMessage}`;
   }
 
-  static redirectToWhatsApp(phoneNumber = WHATSAPP.PHONE_NUMBER, message = null) {
-    const url = this.generateWhatsAppURL(phoneNumber, message);
-    window.open(url, '_blank');
+  static redirectToWhatsApp(completed, total) {
+    const url = this.generateDynamicURL(completed, total);
+    const plainMessage = MessageFormatter.buildWhatsAppMessage(completed, total);
+
+    let newWindow;
+    try {
+      newWindow = window.open(url, '_blank');
+    } catch {
+      FallbackModal.show(plainMessage);
+      return;
+    }
+
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      FallbackModal.show(plainMessage);
+      return;
+    }
+
+    const checkBlocked = setTimeout(() => {
+      try {
+        if (newWindow.closed) {
+          clearTimeout(checkBlocked);
+          return;
+        }
+      } catch {
+        clearTimeout(checkBlocked);
+        return;
+      }
+    }, 800);
   }
 }

@@ -54,7 +54,10 @@ export class CommitmentsRenderer {
       'click',
       () => {
         alert(config.ctaAlert);
-        WhatsAppManager.redirectToWhatsApp();
+        const checkboxes = DOM.qsa('.ck-list input[type="checkbox"]');
+        const completed = checkboxes.filter(cb => cb.checked).length;
+        const total = checkboxes.length;
+        WhatsAppManager.redirectToWhatsApp(completed, total);
       },
       'cta-button-click'
     );

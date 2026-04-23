@@ -65,7 +65,13 @@ export default {
   },
 
   whatsapp: {
-    defaultMessage: "Je ne cesserai jamais de t'aimer ❤"
+    progressMessage: "J'accepte {{completed}}/{{total}} de tes engagements",
+    closingMessage: "Ne cessons jamais de nous aimer",
+    heartSymbol: "<3",
+    fallbackTitle: "Copier le message",
+    fallbackBody: "WhatsApp non détecté. Copiez le message et collez-le :",
+    copyButton: "Copier dans le presse-papiers",
+    copySuccess: "Message copié"
   },
 
   language: {
